@@ -6,12 +6,12 @@
 
 (defn- http-body->str
   [request]
-  (-> @request
-      :body
-      bs/to-string))
+  (d/chain request
+           :body
+           bs/to-string))
 
 (defn get-json
   [& args]
-  (d/future (-> (apply http/get args)
-                http-body->str
-                json/read-str)))
+  (d/chain (apply http/get args)
+           http-body->str
+           json/read-str))
