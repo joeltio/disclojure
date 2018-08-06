@@ -20,3 +20,6 @@ pom.xml.asc
 
 
 # End of https://www.gitignore.io/api/clojure,leiningen
+
+.vscode
+disclojure.code-workspace
