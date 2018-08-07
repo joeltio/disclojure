@@ -7,7 +7,6 @@
 (def url-bot-suffix "/gateway/bot")
 
 (def dispatch-opcode 0)
-(def heartbeat-opcode 1)
 (def identify-opcode 2)
 
 (def identify-library-name "disclojure")
@@ -30,10 +29,6 @@
    (s/put! json-conn {:op opcode :d data}))
   ([json-conn data seq t]
    (s/put! json-conn {:op dispatch-opcode :d data :s seq :t t})))
-
-(defn heartbeat
-  [json-conn seq]
-  (send-payload heartbeat-opcode seq))
 
 (defn create-shard
   [shard-num total-shards]
