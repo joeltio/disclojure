@@ -17,17 +17,13 @@
            http-body->str
            json/read-str))
 
-(defn- connect-via-fn
-  [src f dst]
-  (s/connect-via src #(s/put! dst (f %)) dst))
-
 (defn- stream->json-stream
   [stream]
-  (let [json-incoming-stream (s/stream)
-        json-outbound-stream (s/stream)]
+  (let [json-incoming-stream (s/stream 0 (map json/read-str))
+        json-outbound-stream (s/stream 0 (map json/write-str))]
     ;; Connect the json streams to the stream
-    (connect-via-fn stream json/read-str json-incoming-stream)
-    (connect-via-fn json-outbound-stream json/write-str stream)
+    (s/connect stream json-incoming-stream)
+    (s/connect json-outbound-stream stream)
     ;; Splice the inboud and outbound stream
     (s/splice json-outbound-stream json-incoming-stream)))
 
