@@ -6,7 +6,12 @@
 (def url-suffix "/gateway")
 (def url-bot-suffix "/gateway/bot")
 
+(def dispatch-opcode 0)
 (def heartbeat-opcode 1)
+(def identify-opcode 2)
+
+(def identify-library-name "disclojure")
+(def ^:dynamic *os-name* (System/getProperty "os.name"))
 
 ;;; Getting the gateway endpoint
 (defn- create-bot-header
@@ -20,7 +25,44 @@
    (http/get-json (str base-url url-bot-suffix)
                   (create-bot-header bot-token))))
 
+(defn send-payload
+  ([json-conn opcode data]
+   (s/put! json-conn {:op opcode :d data}))
+  ([json-conn data seq t]
+   (s/put! json-conn {:op dispatch-opcode :d data :s seq :t t})))
 
 (defn heartbeat
   [json-conn seq]
-  @(s/put! {"op" heartbeat-opcode "d" seq}))
+  (send-payload heartbeat-opcode seq))
+
+(defn create-shard
+  [shard-num total-shards]
+  [shard-num total-shards])
+
+(defn create-activity
+  [name type options]
+  (merge options
+         {:name name
+          :type type}))
+
+(defn create-presence
+  [since game status afk?]
+  {:since since
+   :game game
+   :status status
+   :afk afk?})
+
+(defn create-identify
+  [token shard presence]
+  {:token token
+   :properties {:$os *os-name*
+                :$browser identify-library-name
+                :$device identify-library-name}
+   :compress false
+   :large_threshold 250
+   :shard shard
+   :presence presence})
+
+(defn identify
+  [json-conn identify-payload]
+  (send-payload json-conn identify-opcode identify-payload))
