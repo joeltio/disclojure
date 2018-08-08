@@ -3,6 +3,7 @@
             [manifold.stream :as s]))
 
 ;;; Constants
+(def base-url "https://discordapp.com/api")
 (def url-suffix "/gateway")
 (def url-bot-suffix "/gateway/bot")
 
@@ -14,9 +15,9 @@
   {:headers {"Authorization" (str "Bot " bot-token)}})
 
 (defn get-endpoint
-  ([base-url]
+  ([]
    (http/get-json (str base-url url-suffix)))
-  ([base-url bot-token]
+  ([bot-token]
    (http/get-json (str base-url url-bot-suffix)
                   (create-bot-header bot-token))))
 
