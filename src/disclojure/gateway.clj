@@ -20,7 +20,15 @@
    (http/get-json (str base-url url-bot-suffix)
                   (create-bot-header bot-token))))
 
+(defn create-payload
+  ([opcode data]
+   {:op opcode :d data})
+  ([data seq t]
+   {:op dispatch-opcode :d data :s seq :t t}))
+
 (defn send-payload
+  ([json-conn payload]
+   (s/put! json-conn payload))
   ([json-conn opcode data]
    (s/put! json-conn {:op opcode :d data}))
   ([json-conn data seq t]

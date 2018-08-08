@@ -7,6 +7,18 @@
 (def heartbeat-opcode 1)
 (def heartbeat-timeout 1000)
 
+(def ^:private create-heartbeat
+  (partial gateway/create-payload heartbeat-opcode))
+
+(defn is-heartbeat?
+  [payload]
+  (= (payload "op") heartbeat-opcode))
+
+(defn- heartbeat-responder
+  [heartbeat-atom]
+  (comp (filter is-heartbeat?)
+        (map (create-heartbeat @(heartbeat-atom)))))
+
 (defn- heartbeat
   [json-conn seq]
   ;; Send heartbeat
@@ -22,3 +34,9 @@
   (let [heartbeat-seq (atom nil)]
     (t/every interval #(heartbeat json-conn @heartbeat-seq))
     atom))
+
+(defn add-heartbeat-responder
+  [json-conn heartbeat-atom]
+  (let [responder (s/stream 0 heartbeat-responder)]
+    (s/connect json-conn responder)
+    (s/connect responder json-conn)))
