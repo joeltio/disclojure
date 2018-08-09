@@ -29,7 +29,7 @@
     (s/close! json-conn)
     (throw (Exception. "Heartbeat ack timed out or stream take! error"))))
 
-(defn start-heartbeat
+(defn start-periodic-heartbeat
   [json-conn interval]
   (let [heartbeat-seq (atom nil)]
     (t/every interval #(heartbeat json-conn @heartbeat-seq))
@@ -40,3 +40,10 @@
   (let [responder (s/stream 0 heartbeat-responder)]
     (s/connect json-conn responder)
     (s/connect responder json-conn)))
+
+(defn start-heartbeat
+  "Shorthand function to start heartbeat functions after taking the interval"
+  [json-conn]
+  (->> (@(s/take json-conn) "heartbeat_interval")
+       (start-heartbeat json-conn)
+       (add-heartbeat-responder json-conn)))
