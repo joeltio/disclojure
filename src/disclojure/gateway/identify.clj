@@ -22,9 +22,11 @@
    :presence presence})
 
 (defn identify
+  ([json-conn token]
+   (identify json-conn token 0 1))
   ([json-conn token shard-num total-shards]
    (identify json-conn token shard-num total-shards online-presence))
   ([json-conn token shard-num total-shards presence]
    (let [identify-payload (create-identify token shard-num
                                            total-shards presence)]
-    (gateway/send-payload json-conn identify-opcode identify-payload))))
+     (gateway/send-payload json-conn identify-opcode identify-payload))))
