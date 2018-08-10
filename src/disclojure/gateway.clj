@@ -8,8 +8,8 @@
 (def gateway-compress "zlib-stream")
 
 (def base-url "https://discordapp.com/api")
-(def url-suffix "/gateway")
-(def url-bot-suffix "/gateway/bot")
+(def gateway-url (str base-url "/gateway"))
+(def bot-gateway-url (str base-url "/gateway/bot"))
 
 (def dispatch-opcode 0)
 
@@ -22,33 +22,30 @@
   [bot-token]
   {:headers {"Authorization" (str "Bot " bot-token)}})
 
-(defn create-endpoint-params
-  ([]
-   (create-endpoint-params gateway-version gateway-encoding gateway-compress))
-  ([version]
-   (create-endpoint-params version gateway-encoding gateway-compress))
-  ([version encoding]
-   (create-endpoint-params version encoding gateway-compress))
-  ([version encoding compress]
-   {:query-params {:v version :encoding encoding :compress compress}}))
+(defn- create-endpoint-params
+  [options]
+  (let [version (or (options :version) gateway-version)
+        encoding (or (options :encoding) gateway-encoding)
+        compress (or (options :compress) gateway-compress)]
+    {:query-params {:v version
+                    :encoding encoding
+                    :compress compress}}))
 
 (defn- get-endpoint
   ([]
-   (http/get-json (str base-url url-suffix)
-                  (create-endpoint-params)))
-  ([endpoint-params]
-   (http/get-json (str base-url url-suffix)
-                  endpoint-params)))
+   (get-endpoint {}))
+  ([options]
+   (http/get-json gateway-url (create-endpoint-params options))))
 
-(def get-endpoint-memo (memoize get-endpoint))
+(def get-cached-endpoint (memoize get-endpoint))
 
 (defn get-bot-endpoint
   ([bot-token]
-   (get-bot-endpoint bot-token (create-endpoint-params)))
-  ([bot-token endpoint-params]
-   (http/get-json (str base-url url-bot-suffix)
+   (get-bot-endpoint bot-token {}))
+  ([bot-token options]
+   (http/get-json bot-gateway-url
                   (create-bot-header bot-token)
-                  endpoint-params)))
+                  (create-endpoint-params options))))
 
 (defn create-payload
   ([opcode data]
