@@ -13,6 +13,10 @@
 
 (def dispatch-opcode 0)
 
+(defn is-dispatch?
+  [payload]
+  (= (payload "op") dispatch-opcode))
+
 ;;; Getting the gateway endpoint
 (defn- create-bot-header
   [bot-token]
