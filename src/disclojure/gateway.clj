@@ -1,6 +1,7 @@
 (ns disclojure.gateway
   (:require [disclojure.http :as http]
-            [manifold.stream :as s]))
+            [manifold.stream :as s]
+            [manifold.deferred :as d]))
 
 ;;; Constants
 (def gateway-version 6)
@@ -35,13 +36,15 @@
   ([]
    (get-endpoint {}))
   ([options]
-   (http/get-json gateway-url (create-endpoint-params options))))
+   (d/chain' (http/get-json gateway-url
+                            (create-endpoint-params options))
+             #(% "url"))))
 
 (def get-cached-endpoint (memoize get-endpoint))
 
-(defn get-bot-endpoint
+(defn get-bot-gateway
   ([bot-token]
-   (get-bot-endpoint bot-token {}))
+   (get-bot-gateway bot-token {}))
   ([bot-token options]
    (http/get-json bot-gateway-url
                   (create-bot-header bot-token)
