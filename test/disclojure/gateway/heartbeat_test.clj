@@ -37,3 +37,17 @@
       (Thread/sleep 1000)
       (is @(s/try-take! tx false 100 false))
       (s/close! conn))))
+
+(deftest heartbeat-responder-test
+  (testing "responder responds to heartbeat requests"
+    (let [rx (s/stream)
+          tx (s/stream)
+          conn (s/splice tx rx)
+          heartbeat-atom (atom nil)
+          payload {"op" 1 "s" @heartbeat-atom}]
+      ;; Connect responder to the connection
+      (heartbeat/connect-responder conn heartbeat-atom)
+      ;; Request for heartbeat
+      (s/put! rx payload)
+      (is (= @(s/try-take! tx false 100 false)
+             payload)))))
