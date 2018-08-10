@@ -1,9 +1,6 @@
 (ns disclojure.gateway.client
   (:require [disclojure.gateway :as gateway]
-            [disclojure.gateway.heartbeat :as heartbeat]
-            [disclojure.gateway.identify :as identify]
-            [disclojure.http :as http]
-            [manifold.stream :as s]))
+            [disclojure.http :as http]))
 
 (defn- create-conn
   ([]
