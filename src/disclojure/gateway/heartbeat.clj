@@ -1,4 +1,36 @@
 (ns disclojure.gateway.heartbeat
+  "Heartbeats to Discord API to show that the connection is still alive.
+   Once connected to a gateway, the client has to start heartbeating (see
+   [Discord Heartbeating](https://discordapp.com/developers/docs/topics/gateway#heartbeating))
+
+   There are three main processes for heartbeating:
+   1. Heartbeating every interval
+   2. Replying to a requested heartbeat
+   3. Incrementing heartbeat sequence
+
+   1. Heartbeating every interval
+   After the client has connected, it will receive a hello payload (opcode 10):
+   ```
+   {
+     \"op\": 10,
+     \"d\": {
+      \"heartbeat_interval\": 45000,
+      \"_trace\": [\"discord-gateway-prd-1-99\"]
+    }
+   }
+   ```
+   The client then has to start sending heartbeats (opcode 1) to the gateway
+   every heartbeat interval (which is in milliseconds).
+
+   2. Replying to a requested heartbeat
+   The gateway can request for a heartbeat by sending a heartbeat (opcode 1).
+   The response should be the same as 1.--a heartbeat.
+
+   3. Incrementing heartbeat sequence
+   A heartbeat also consists of a sequence number (which is represented using
+   an atom). This sequence number is the largest sequence number received from
+   a gateway dispatch (opcode 0). This heartbeat sequence is used in the
+   heartbeat payload as well as for resuming events."
   (:require [disclojure.gateway :as gateway]
             [manifold.time :as t]
             [manifold.stream :as s]
