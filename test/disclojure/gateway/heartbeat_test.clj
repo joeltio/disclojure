@@ -17,11 +17,11 @@
         tx (s/stream)
         conn (s/splice tx rx)
         heartbeat-atom (atom nil)
-        heartbeat-ack-receive-stream (s/filter #'heartbeat/is-heartbeat-ack? conn)
+        heartbeat-ack-stream (#'heartbeat/heartbeat-ack-stream conn)
         interval 1000
         response-leeway 100]
     ;; Start periodic heartbeat and wait for interval
-    (#'heartbeat/start-periodic-heartbeat conn heartbeat-ack-receive-stream
+    (#'heartbeat/start-periodic-heartbeat conn heartbeat-ack-stream
                                           heartbeat-atom interval)
     (testing "heartbeat every of the given interval"
       ;; Take heartbeat and send back an ack

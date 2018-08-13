@@ -46,13 +46,20 @@
 
 (def ^:private thread-name-prefix "heartbeat-pool-")
 
-(defn- is-heartbeat-ack?
-  [payload]
-  (= (gateway/get-opcode payload) heartbeat-ack-opcode))
+(def ^:private is-heartbeat?
+  (partial gateway/is-opcode? heartbeat-opcode))
+(def ^:private is-heartbeat-ack?
+  (partial gateway/is-opcode? heartbeat-ack-opcode))
 
 (defn- take-interval
   [conn]
   (d/chain' (s/take! conn) #(get-in % ["d" "heartbeat_interval"])))
+
+(def ^:private heartbeat-ack-stream
+  (partial s/filter is-heartbeat-ack?))
+
+(def ^:private heartbeat-stream
+  (partial s/filter is-heartbeat?))
 
 (defn- create-heartbeat-clock
   [thread-pool-size]
