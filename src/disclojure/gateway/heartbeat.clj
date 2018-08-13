@@ -46,6 +46,10 @@
 
 (def ^:private thread-name-prefix "heartbeat-pool-")
 
+(defn- is-heartbeat-ack?
+  [payload]
+  (= (gateway/get-opcode payload) heartbeat-ack-opcode))
+
 (defn- take-interval
   [conn]
   (d/chain' (s/take! conn) #(get-in % ["d" "heartbeat_interval"])))
@@ -59,27 +63,25 @@
          t/scheduled-executor->clock)))
 
 (defn- heartbeat
-  [conn ack-subscriber heartbeat-atom]
+  [conn ack-stream heartbeat-atom]
   ;; Send the heartbeat
   (gateway/send-payload conn heartbeat-opcode @heartbeat-atom)
   ;; Try to receive a heartbeat ack
-  (when-not @(s/try-take! ack-subscriber false heartbeat-timeout false)
+  (when-not @(s/try-take! ack-stream false heartbeat-timeout false)
     ;; Failed, close connection and throw exception
     (s/close! conn)
     (throw (Exception. "Heartbeat ack timed out or stream take! error"))))
 
 (defn- start-periodic-heartbeat
-  [conn event-bus heartbeat-atom interval]
-  (let [heartbeat-ack-subscriber (b/subscribe event-bus heartbeat-ack-opcode)
-        clock (create-heartbeat-clock 1)]
+  [conn ack-stream heartbeat-atom interval]
     ;; A clock is required here as t/every and t/try-take! both use the same
     ;; clock (manifold's *clock*), and the clock is single-threaded. Without an
     ;; additional clock, it will deadlock.
     ;; Oddly enough, t/with-clock seems to only bind to t/every, so only one
     ;; thread is needed for the clock.
-    (t/with-clock clock
-      (t/every interval
-               #(heartbeat conn heartbeat-ack-subscriber heartbeat-atom)))))
+  (t/with-clock (create-heartbeat-clock 1)
+    (t/every interval
+              #(heartbeat conn ack-stream heartbeat-atom))))
 
 #_(defn start-heartbeat
   [conn event-bus heartbeat-atom]

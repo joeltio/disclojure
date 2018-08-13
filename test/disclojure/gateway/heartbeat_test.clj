@@ -2,8 +2,7 @@
   (:require [clojure.test :refer :all]
             [disclojure.gateway.heartbeat :as heartbeat]
             [manifold.deferred :as d]
-            [manifold.stream :as s]
-            [manifold.bus :as b]))
+            [manifold.stream :as s]))
 
 (deftest take-interval-test
   (let [conn (s/stream)
@@ -17,14 +16,13 @@
   (let [rx (s/stream)
         tx (s/stream)
         conn (s/splice tx rx)
-        event-bus (b/event-bus)
         heartbeat-atom (atom nil)
+        heartbeat-ack-receive-stream (s/filter #'heartbeat/is-heartbeat-ack? conn)
         interval 1000
         response-leeway 100]
-    ;; Connect conn to event-bus
-    (s/connect-via conn #(b/publish! event-bus (% "op") %) (s/stream))
     ;; Start periodic heartbeat and wait for interval
-    (#'heartbeat/start-periodic-heartbeat conn event-bus heartbeat-atom interval)
+    (#'heartbeat/start-periodic-heartbeat conn heartbeat-ack-receive-stream
+                                          heartbeat-atom interval)
     (testing "heartbeat every of the given interval"
       ;; Take heartbeat and send back an ack
       (is @(s/try-take! tx false response-leeway false))
