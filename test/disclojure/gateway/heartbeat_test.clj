@@ -44,9 +44,6 @@
         conn (s/splice tx rx)
         heartbeat-atom (atom nil)
         executor (ex/fixed-thread-executor 1)
-        ;; The heartbeat responder will heartbeat, which is blocking. This
-        ;; results in s/put! to be blocking. So, put the heartbeat stream on a
-        ;; different executor
         heartbeat-stream (s/onto executor (#'heartbeat/heartbeat-stream conn))
         heartbeat-ack-stream (#'heartbeat/heartbeat-ack-stream conn)
         response-leeway 100]

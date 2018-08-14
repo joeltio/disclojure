@@ -96,6 +96,7 @@
              #(heartbeat conn ack-stream heartbeat-atom))))
 
 (defn- add-heartbeat-responder
+  "Adds a responder that replies a heartbeat whenever one is requested"
   [conn ack-stream heartbeat-stream heartbeat-atom]
   (s/connect-via heartbeat-stream
                  (fn [_] (do (heartbeat conn ack-stream heartbeat-atom)
@@ -103,6 +104,7 @@
                  conn))
 
 (defn- add-heartbeat-updater
+  "Adds an updater that updates the heartbeat atom when a dispatch is received"
   [conn dispatch-stream heartbeat-atom]
   (s/connect-via dispatch-stream
                  #(do (update-heartbeat-atom! heartbeat-atom (% "s"))
@@ -111,7 +113,10 @@
 
 (defn start-heartbeat
   [conn event-bus heartbeat-atom]
-  (let [executor (ex/fixed-thread-executor 1)
+  (let [;; The heartbeat responder will heartbeat, which is blocking. This
+        ;; results in s/put! to be blocking. So, put the heartbeat stream on a
+        ;; different executor
+        executor (ex/fixed-thread-executor 1)
         heartbeat-stream (s/onto executor (heartbeat-stream conn))
         heartbeat-ack-stream (heartbeat-ack-stream conn)
         dispatch-stream (gateway/dispatch-stream conn)]
