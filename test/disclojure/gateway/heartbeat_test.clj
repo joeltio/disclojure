@@ -28,11 +28,11 @@
     (testing "heartbeat every of the given interval"
       ;; Take heartbeat and send back an ack
       (is @(s/try-take! tx false response-leeway false))
-      (s/put! rx {"op" 11})
+      (s/put! rx {"op" heartbeat/heartbeat-ack-opcode})
       (Thread/sleep 1000)
       ;; Take heartbeat and send back an ack
       (is @(s/try-take! tx false response-leeway false))
-      (s/put! rx {"op" 11})
+      (s/put! rx {"op" heartbeat/heartbeat-ack-opcode})
       (Thread/sleep 1000))
     (testing "connection closes when no ack is received"
       (Thread/sleep (+ heartbeat/heartbeat-timeout response-leeway))
@@ -55,23 +55,23 @@
                                          heartbeat-stream heartbeat-atom)
     ;; Request for heartbeat
     (testing "reply to heartbeat request"
-      (s/put! rx {"op" 1 "d" nil})
+      (s/put! rx {"op" heartbeat/heartbeat-opcode})
       (is (= @(s/try-take! tx false response-leeway false)
               {:op 1 :d nil}))
-      (s/put! rx {"op" 11}))
+      (s/put! rx {"op" heartbeat/heartbeat-ack-opcode}))
     ;; Send something irrelevant
     (testing "do not reply to non-heartbeat requests"
-      (s/put! rx {"op" 11 "d" nil})
+      (s/put! rx {"op" heartbeat/heartbeat-ack-opcode})
       (is (not @(s/try-take! tx false response-leeway false)))
       ;; Clear the payload so that the stream can continue receiving
       (s/take! heartbeat-ack-stream))
     ;; Change heartbeat atom and test
     (testing "reply with updated heartbeat atom"
       (swap! heartbeat-atom #(if (nil? %) 1 (inc %)))
-      (s/put! rx {"op" 1 "d" nil})
+      (s/put! rx {"op" heartbeat/heartbeat-opcode})
       (is (= @(s/try-take! tx false response-leeway false)
-             {:op 1 :d @heartbeat-atom}))
-      (s/put! rx {"op" 11}))))
+             {:op heartbeat/heartbeat-opcode :d @heartbeat-atom}))
+      (s/put! rx {"op" heartbeat/heartbeat-ack-opcode}))))
 
 (deftest heartbeat-updater-test
   (let [rx (s/stream)
