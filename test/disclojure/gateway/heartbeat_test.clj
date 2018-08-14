@@ -1,6 +1,7 @@
 (ns disclojure.gateway.heartbeat-test
   (:require [clojure.test :refer :all]
             [disclojure.gateway.heartbeat :as heartbeat]
+            [disclojure.gateway :as gateway]
             [manifold.deferred :as d]
             [manifold.executor :as ex]
             [manifold.stream :as s]))
@@ -71,3 +72,24 @@
       (is (= @(s/try-take! tx false response-leeway false)
              {:op 1 :d @heartbeat-atom}))
       (s/put! rx {"op" 11}))))
+
+(deftest heartbeat-updater-test
+  (let [rx (s/stream)
+        tx (s/stream)
+        conn (s/splice tx rx)
+        heartbeat-atom (atom nil)
+        dispatch-stream (gateway/dispatch-stream conn)
+        response-leeway 100]
+    ;; Add heartbeat incrementer
+    (#'heartbeat/add-heartbeat-updater conn dispatch-stream heartbeat-atom)
+    (testing "sending dispatch increments atom"
+      (s/put! rx {"op" gateway/dispatch-opcode "s" 0})
+      (Thread/sleep response-leeway)
+      (is (= @heartbeat-atom 0)))
+    (testing "incrementer takes largest sequence number"
+      (s/put! rx {"op" gateway/dispatch-opcode "s" 1})
+      (Thread/sleep response-leeway)
+      (is (= @heartbeat-atom 1))
+      (s/put! rx {"op" gateway/dispatch-opcode "s" 0})
+      (Thread/sleep response-leeway)
+      (is (= @heartbeat-atom 1)))))

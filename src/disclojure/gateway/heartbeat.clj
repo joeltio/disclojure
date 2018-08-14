@@ -61,6 +61,12 @@
 (def ^:private heartbeat-stream
   (partial s/filter is-heartbeat?))
 
+(defn- update-heartbeat-atom!
+  [heartbeat-atom new-val]
+  (swap! heartbeat-atom #(if (nil? %1)
+                           %2
+                           (max %1 %2)) new-val))
+
 (defn- create-heartbeat-clock
   [thread-pool-size]
   (let [cnt (atom 0)
@@ -96,6 +102,13 @@
                  (fn [_] (do (heartbeat conn ack-stream heartbeat-atom)
                              (d/success-deferred true)))
                  conn))
+
+(defn- add-heartbeat-updater
+  [conn dispatch-stream heartbeat-atom]
+  (s/connect-via dispatch-stream
+                 #(do (update-heartbeat-atom! heartbeat-atom (% "s"))
+                      (d/success-deferred true))
+                 (s/stream)))
 
 #_(defn start-heartbeat
   [conn event-bus heartbeat-atom]

@@ -18,9 +18,15 @@
   [payload]
   (payload "op"))
 
-(defn is-dispatch?
-  [payload]
-  (= (get-opcode payload) dispatch-opcode))
+(defn is-opcode?
+  [opcode payload]
+  (= (get-opcode payload) opcode))
+
+(def is-dispatch?
+  (partial is-opcode? dispatch-opcode))
+
+(def dispatch-stream
+  (partial s/filter is-dispatch?))
 
 ;;; Getting the gateway endpoint
 (defn- create-bot-header
