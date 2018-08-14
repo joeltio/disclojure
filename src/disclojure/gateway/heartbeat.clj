@@ -88,7 +88,14 @@
     ;; thread is needed for the clock.
   (t/with-clock (create-heartbeat-clock 1)
     (t/every interval
-              #(heartbeat conn ack-stream heartbeat-atom))))
+             #(heartbeat conn ack-stream heartbeat-atom))))
+
+(defn- add-heartbeat-responder
+  [conn ack-stream heartbeat-stream heartbeat-atom]
+  (s/connect-via heartbeat-stream
+                 (fn [_] (do (heartbeat conn ack-stream heartbeat-atom)
+                             (d/success-deferred true)))
+                 conn))
 
 #_(defn start-heartbeat
   [conn event-bus heartbeat-atom]
