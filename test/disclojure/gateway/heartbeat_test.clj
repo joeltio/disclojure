@@ -42,7 +42,7 @@
         tx (s/stream)
         conn (s/splice tx rx)
         heartbeat-atom (atom nil)
-        executor (ex/fixed-thread-executor 2)
+        executor (ex/fixed-thread-executor 1)
         ;; The heartbeat responder will heartbeat, which is blocking. This
         ;; results in s/put! to be blocking. So, put the heartbeat stream on a
         ;; different executor
@@ -69,4 +69,5 @@
       (swap! heartbeat-atom #(if (nil? %) 1 (inc %)))
       (s/put! rx {"op" 1 "d" nil})
       (is (= @(s/try-take! tx false response-leeway false)
-             {:op 1 :d @heartbeat-atom})))))
+             {:op 1 :d @heartbeat-atom}))
+      (s/put! rx {"op" 11}))))
