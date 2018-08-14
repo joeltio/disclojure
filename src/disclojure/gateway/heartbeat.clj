@@ -35,7 +35,6 @@
             [manifold.time :as t]
             [manifold.stream :as s]
             [manifold.deferred :as d]
-            [manifold.bus :as b]
             [manifold.executor :as ex])
   (:import [java.util.concurrent ScheduledThreadPoolExecutor]))
 
@@ -110,12 +109,17 @@
                       (d/success-deferred true))
                  (s/stream)))
 
-#_(defn start-heartbeat
+(defn start-heartbeat
   [conn event-bus heartbeat-atom]
-  ;; Add periodic heartbeater
-  (start-periodic-heartbeat conn event-bus
-                            heartbeat-atom @(take-interval conn))
-  ;; Add heartbeat responder
-  (add-heartbeat-responder conn event-bus heartbeat-atom)
-  ;; Add heartbeat incrementer
-  (add-heartbeat-incrementer event-bus heartbeat-atom))
+  (let [executor (ex/fixed-thread-executor 1)
+        heartbeat-stream (s/onto executor (heartbeat-stream conn))
+        heartbeat-ack-stream (heartbeat-ack-stream conn)
+        dispatch-stream (gateway/dispatch-stream conn)]
+    ;; Add periodic heartbeater
+    (start-periodic-heartbeat conn heartbeat-ack-stream heartbeat-atom
+                              @(take-interval conn))
+    ;; Add heartbeat responder
+    (add-heartbeat-responder conn heartbeat-ack-stream
+                            heartbeat-stream heartbeat-atom)
+    ;; Add heartbeat incrementer
+    (add-heartbeat-updater conn dispatch-stream heartbeat-atom)))
